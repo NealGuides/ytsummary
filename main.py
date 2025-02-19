@@ -6,8 +6,10 @@ import cv2
 import pytesseract
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Allow cross-origin requests
 
 # 🔹 Extracts Transcript from YouTube Video
 def get_transcript(video_id):
@@ -70,7 +72,7 @@ def extract_tactic_code(video_url):
 
     except yt_dlp.utils.DownloadError as e:
         print(f"Error downloading video: {e}")
-        return None
+        return jsonify({"error": f"Error downloading video: {e}"}), 500
     except cv2.error as e:
         print(f"Error processing video frame: {e}")
         os.remove("video.mp4")  # Clean up video file in case of error
@@ -96,11 +98,11 @@ def tactic_code_api():
     if any(keyword in video_title.lower() for keyword in ["tactic", "custom tactics", "formation"]):
         tactic_code = extract_tactic_code(url)
         if tactic_code:
-            return jsonify({"tactic_code": f"👇\n🛜 CODE: {tactic_code}"})
-        return jsonify({"error": "Tactic code not found in video"})
+            return jsonify({"tactic_code": f"👇\n🛜 CODE: {tactic_code}"}), 200
+        return jsonify({"error": "Tactic code not found in video"}), 404
 
-    return jsonify({"message": "This video does not contain a tactic code."})
+    return jsonify({"message": "This video does not contain a tactic code."}), 200
 
 # ✅ Flask Server Configuration
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 80)))
+    app.run(host="0.0.0.0", port=3000)  # Port 3000 is better for Replit
